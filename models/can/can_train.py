@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 import time
 import wandb
 from datetime import datetime
+from tqdm.auto import tqdm
 
 # Import model and data loader from previous files
 from models.can.can import CAN
@@ -36,19 +37,19 @@ train_transforms = A.Compose([
     RandomMorphology(p=0.5, kernel_size=2),
     A.Normalize(mean=[0.0], std=[1.0]),  # For grayscale      #type: ignore
     A.pytorch.ToTensorV2()
-])  
+])
 
 def train_epoch(model, train_loader, optimizer, device, grad_clip=5.0, lambda_count=0.01, print_freq=10):
-    '''
+    """
     Train the model for one epoch
-    '''
+    """
     model.train()
     total_loss = 0.0
     total_cls_loss = 0.0
     total_count_loss = 0.0
     batch_count = 0
 
-    for i, (images, captions, caption_lengths, count_targets) in enumerate(train_loader):
+    for i, (images, captions, caption_lengths, count_targets) in tqdm(enumerate(train_loader)):
         batch_count += 1
         images = images.to(device)
         captions = captions.to(device)
@@ -90,9 +91,9 @@ def train_epoch(model, train_loader, optimizer, device, grad_clip=5.0, lambda_co
     return total_loss / batch_count, total_cls_loss / batch_count, total_count_loss / batch_count
 
 def validate(model, val_loader, device, lambda_count=0.01):
-    '''
+    """
     Validate the model
-    '''
+    """
     model.eval()
     total_loss = 0.0
     total_cls_loss = 0.0
@@ -100,7 +101,7 @@ def validate(model, val_loader, device, lambda_count=0.01):
     batch_count = 0
 
     with torch.no_grad():
-        for i, (images, captions, caption_lengths, count_targets) in enumerate(val_loader):
+        for i, (images, captions, caption_lengths, count_targets) in tqdm(enumerate(val_loader)):
             batch_count += 1
             images = images.to(device)
             captions = captions.to(device)
@@ -168,9 +169,9 @@ def main():
         num_workers=4
     )
     
-    print(f"Training samples: {len(train_loader.dataset)}")            #type: ignore
-    print(f"Validation samples: {len(val_loader.dataset)}")            #type: ignore
-    print(f"Test samples: {len(test_loader.dataset)}")                 #type: ignore
+    print(f"Training samples: {len(train_loader.dataset)}")       #type: ignore
+    print(f"Validation samples: {len(val_loader.dataset)}")       #type: ignore
+    print(f"Test samples: {len(test_loader.dataset)}")            #type: ignore
     print(f"Vocabulary size: {len(vocab)}")
     
     # Create model
@@ -210,7 +211,7 @@ def main():
     # Training loop
     best_val_loss = float('inf')
     
-    for epoch in range(epochs):
+    for epoch in tqdm(range(epochs)):
         curr_lr = scheduler.get_last_lr()[0]
         print(f'Epoch {epoch+1:03}/{epochs:03}')
         t1 = time.time()

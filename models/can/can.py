@@ -404,20 +404,22 @@ class CAN(nn.Module):
 
     def recognize(self, images, max_length=150, start_token=None, end_token=None, beam_width=5):
         """
-        Recognize the handwritten expression in the given image using beam search
+        Recognize the handwritten expression using beam search (batch_size=1 only).
         
         Args:
-            images: Input images, shape (batch_size, channels, height, width)
+            images: Input image tensor, shape (1, channels, height, width)
             max_length: Maximum length of the output sequence
             start_token: Start token index
             end_token: End token index
             beam_width: Beam width for beam search
             
         Returns:
-            best_sequence: Best sequence of token indices
-            attention_weights: Attention weights for visualization
+            best_sequence: List of token indices
+            attention_weights: List of attention weights for visualization
         """
-        batch_size = images.shape[0]
+        if images.size(0) != 1:
+            raise ValueError("Beam search is implemented only for batch_size=1")
+        
         device = images.device
         
         # Encode the image
@@ -426,127 +428,104 @@ class CAN(nn.Module):
         # Get count vector
         _, count_vector = self.mscm(visual_features)
         
-        # Set initial beam state
-        beam_sequences = torch.full((batch_size, 1), start_token, dtype=torch.long, device=device)      #type: ignore
-        beam_scores = torch.zeros(batch_size, 1, device=device)
+        # Prepare feature map for decoder
+        projected_features = self.decoder.feature_proj(visual_features)  # (1, 2*hidden_size, H, W)
+        H, W = projected_features.size(2), projected_features.size(3)
+        projected_features = projected_features.permute(0, 2, 3, 1).contiguous()  # (1, H, W, 2*hidden_size)
+        pos_encoding = self.decoder.pos_encoder(projected_features)  # (1, H, W, 2*hidden_size)
+        projected_features = projected_features + pos_encoding  # (1, H, W, 2*hidden_size)
+        projected_features = projected_features.view(1, H*W, -1)  # (1, H*W, 2*hidden_size)
         
-        # Store for completed sequences
-        complete_sequences = []
-        complete_scores = []
+        # Initialize beams
+        beam_sequences = [torch.tensor([start_token], device=device)] * beam_width  # List of (seq_len) tensors
+        beam_scores = torch.zeros(beam_width, device=device)  # (beam_width)
+        h_t = torch.zeros(beam_width, self.hidden_size, device=device)  # (beam_width, hidden_size)
+        if self.use_coverage:
+            coverage = torch.zeros(beam_width, H*W, device=device)  # (beam_width, H*W)
         
-        # Store attention weights for visualization
         all_attention_weights = []
         
-        # Initialize hidden state
-        h_t = torch.zeros(batch_size, self.hidden_size, device=device)
-        
-        # Initialize coverage if used
-        if self.use_coverage:
-            # Get feature dimensions
-            _, _, H, W = visual_features.size()
-            # Initialize coverage
-            coverage = torch.zeros(batch_size, H*W, 1, device=device)
-        
-        # Transform feature map for decoder
-        projected_features = self.decoder.feature_proj(visual_features)
-        H, W = projected_features.size(2), projected_features.size(3)
-        
-        # Reshape and add positional encoding
-        projected_features = projected_features.permute(0, 2, 3, 1).contiguous()
-        pos_encoding = self.decoder.pos_encoder(projected_features)
-        projected_features = projected_features + pos_encoding
-        
-        # Reshape for attention processing
-        projected_features = projected_features.view(batch_size, H*W, -1)
-                
         for step in range(max_length):
-            # Get current token
-            current_token = beam_sequences[:, -1]
+            # Get current tokens for all beams
+            current_tokens = torch.tensor([seq[-1] for seq in beam_sequences], device=device)  # (beam_width)
             
-            # Apply embedding to the current token
-            embedded = self.decoder.embedding(current_token)
+            # Apply embedding
+            embedded = self.decoder.embedding(current_tokens)  # (beam_width, embedding_dim)
             
-            # Compute attention
-            attention_input = self.decoder.attention_w(projected_features)
-            
-            # Add coverage attention if used
+            # Compute attention for each beam
+            attention_input = self.decoder.attention_w(projected_features.expand(beam_width, -1, -1))  # (beam_width, H*W, hidden_size)
             if self.use_coverage:
-                coverage_input = self.decoder.coverage_proj(coverage.float())           #type: ignore
+                coverage_input = self.decoder.coverage_proj(coverage.unsqueeze(-1))  # (beam_width, H*W, hidden_size)            #type: ignore
                 attention_input = attention_input + coverage_input
             
-            # Add hidden state to attention
-            h_expanded = h_t.unsqueeze(1).expand(-1, H*W, -1)
+            h_expanded = h_t.unsqueeze(1).expand(-1, H*W, -1)  # (beam_width, H*W, hidden_size)
             attention_input = torch.tanh(attention_input + h_expanded)
             
-            # Compute attention weights
-            e_t = self.decoder.attention_v(attention_input).squeeze(-1)
-            alpha_t = F.softmax(e_t, dim=1)
+            e_t = self.decoder.attention_v(attention_input).squeeze(-1)  # (beam_width, H*W)
+            alpha_t = F.softmax(e_t, dim=1)  # (beam_width, H*W)
             
-            # Store attention weights for later visualization
-            all_attention_weights.append(alpha_t.unsqueeze(1).detach())
+            all_attention_weights.append(alpha_t.detach())
             
-            # Update coverage if used
             if self.use_coverage:
-                coverage = coverage + alpha_t.unsqueeze(-1)              #type: ignore
+                coverage = coverage + alpha_t            #type: ignore
             
-            # Compute context vector
-            alpha_t = alpha_t.unsqueeze(1)
-            context = torch.bmm(alpha_t, projected_features).squeeze(1)
-            context = context[:, :self.hidden_size]
+            context = torch.bmm(alpha_t.unsqueeze(1), projected_features.expand(beam_width, -1, -1)).squeeze(1)  # (beam_width, 2*hidden_size)
+            context = context[:, :self.hidden_size]  # (beam_width, hidden_size)
             
-            # Combine embedding, context vector, and count vector
-            gru_input = torch.cat([embedded, context, count_vector], dim=1)
+            # Expand count_vector to (beam_width, num_classes)
+            count_vector_expanded = count_vector.expand(beam_width, -1)  # (beam_width, num_classes)
             
-            # Update hidden state
-            h_t = self.decoder.gru(gru_input, h_t)
+            gru_input = torch.cat([embedded, context, count_vector_expanded], dim=1)  # (beam_width, embedding_dim + hidden_size + num_classes)
             
-            # Predict output symbol
-            output = self.decoder.out(torch.cat([h_t, context, count_vector], dim=1))
-            scores = F.log_softmax(output, dim=1)
+            h_t = self.decoder.gru(gru_input, h_t)  # (beam_width, hidden_size)
             
-            # Calculate new scores
-            new_beam_scores = beam_scores + scores.unsqueeze(1)
+            output = self.decoder.out(torch.cat([h_t, context, count_vector_expanded], dim=1))  # (beam_width, num_classes)
+            scores = F.log_softmax(output, dim=1)  # (beam_width, num_classes)
             
-            # Reshape for top-k selection
-            new_beam_scores = new_beam_scores.view(batch_size, -1)
+            # Compute new scores for all beam-token combinations
+            new_beam_scores = beam_scores.unsqueeze(1) + scores  # (beam_width, num_classes)
+            new_beam_scores_flat = new_beam_scores.view(-1)  # (beam_width * num_classes)
             
-            # Select top-k
-            topk_scores, topk_indices = new_beam_scores.topk(beam_width, dim=1)
+            # Select top beam_width scores and indices
+            topk_scores, topk_indices = new_beam_scores_flat.topk(beam_width)
             
-            # Update beam sequences
+            # Determine which beam and token each top score corresponds to
+            beam_indices = topk_indices // self.num_classes  # (beam_width)
+            token_indices = topk_indices % self.num_classes  # (beam_width)
+            
+            # Create new beam sequences and states
             new_beam_sequences = []
+            new_h_t = []
+            if self.use_coverage:
+                new_coverage = []
             for i in range(beam_width):
-                token_idx = topk_indices[:, i] % self.num_classes
-                beam_idx = topk_indices[:, i] // self.num_classes
-                
-                # Create new sequence
-                new_seq = torch.cat([beam_sequences[:, :beam_idx+1], token_idx.unsqueeze(1)], dim=1)
+                prev_beam_idx = beam_indices[i].item()
+                token = token_indices[i].item()
+                new_seq = torch.cat([beam_sequences[prev_beam_idx], torch.tensor([token], device=device)])           #type: ignore
                 new_beam_sequences.append(new_seq)
-                
-                # Check if complete
-                if token_idx == end_token:
-                    complete_sequences.append(new_seq)
-                    complete_scores.append(topk_scores[:, i])
+                new_h_t.append(h_t[prev_beam_idx])
+                if self.use_coverage:
+                    new_coverage.append(coverage[prev_beam_idx])           #type: ignore
             
-            # If all beams are complete, break
-            if len(complete_sequences) >= beam_width:
-                break
-            
-            # Update beam state
-            beam_sequences = torch.cat(new_beam_sequences, dim=1)
+            # Update beams
+            beam_sequences = new_beam_sequences
             beam_scores = topk_scores
+            h_t = torch.stack(new_h_t)
+            if self.use_coverage:
+                coverage = torch.stack(new_coverage)           #type: ignore
         
-        # If no complete sequences, use the best beam
-        if not complete_sequences:
-            complete_sequences = [beam_sequences]
-            complete_scores = [beam_scores[:, 0]]
+        # Select the sequence with the highest score
+        best_idx = beam_scores.argmax()
+        best_sequence = beam_sequences[best_idx].tolist()
         
-        # Select the best sequence
-        best_idx = torch.argmax(torch.cat(complete_scores))
-        best_sequence = complete_sequences[best_idx // batch_size]
+        # Remove <start> and stop at <end>
+        if best_sequence[0] == start_token:
+            best_sequence = best_sequence[1:]
+        if end_token in best_sequence:
+            end_idx = best_sequence.index(end_token)
+            best_sequence = best_sequence[:end_idx]
         
-        # Return the best sequence and attention weights
-        return best_sequence[0].cpu().numpy(), all_attention_weights
+        return best_sequence, all_attention_weights
 
 
 # Use the model

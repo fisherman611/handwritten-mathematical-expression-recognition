@@ -427,7 +427,7 @@ class CAN(nn.Module):
         _, count_vector = self.mscm(visual_features)
         
         # Set initial beam state
-        beam_sequences = torch.full((batch_size, 1), start_token, dtype=torch.long, device=device)
+        beam_sequences = torch.full((batch_size, 1), start_token, dtype=torch.long, device=device)      #type: ignore
         beam_scores = torch.zeros(batch_size, 1, device=device)
         
         # Store for completed sequences
@@ -471,7 +471,7 @@ class CAN(nn.Module):
             
             # Add coverage attention if used
             if self.use_coverage:
-                coverage_input = self.decoder.coverage_proj(coverage.float())
+                coverage_input = self.decoder.coverage_proj(coverage.float())           #type: ignore
                 attention_input = attention_input + coverage_input
             
             # Add hidden state to attention
@@ -487,7 +487,7 @@ class CAN(nn.Module):
             
             # Update coverage if used
             if self.use_coverage:
-                coverage = coverage + alpha_t.unsqueeze(-1)
+                coverage = coverage + alpha_t.unsqueeze(-1)              #type: ignore
             
             # Compute context vector
             alpha_t = alpha_t.unsqueeze(1)

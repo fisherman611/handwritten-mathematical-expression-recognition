@@ -53,7 +53,7 @@ def train_epoch(model, train_loader, optimizer, device, grad_clip=5.0, lambda_co
     total_count_loss = 0.0
     batch_count = 0
 
-    for i, (images, captions, caption_lengths, count_targets) in tqdm(enumerate(train_loader)):
+    for i, (images, captions, caption_lengths, count_targets) in tqdm(enumerate(train_loader), total=len(train_loader)):
         batch_count += 1
         images = images.to(device)
         captions = captions.to(device)
@@ -105,7 +105,7 @@ def validate(model, val_loader, device, lambda_count=0.01):
     batch_count = 0
 
     with torch.no_grad():
-        for i, (images, captions, caption_lengths, count_targets) in tqdm(enumerate(val_loader)):
+        for i, (images, captions, caption_lengths, count_targets) in tqdm(enumerate(val_loader), total=len(val_loader)):
             batch_count += 1
             images = images.to(device)
             captions = captions.to(device)

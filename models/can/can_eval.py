@@ -1,28 +1,43 @@
 import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
 import torch
 import pandas as pd
 from PIL import Image
 import cv2
 import albumentations as A
+from albumentations.pytorch import ToTensorV2
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 import json
 import torch.nn.functional as F
 
+# Make necessary imports at the module level
 try:
-    from .can_dataloader import Vocabulary, process_img, inp_h, inp_w
-    torch.serialization.add_safe_globals([Vocabulary])
+    from models.can.can_dataloader import Vocabulary, process_img, inp_h, inp_w
 except ImportError:
-    pass
+    try:
+        from can_dataloader import Vocabulary, process_img, inp_h, inp_w
+    except ImportError:
+        pass
+
+# Make Vocabulary safe for torch serialization
+torch.serialization.add_safe_globals([Vocabulary])        #type: ignore
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 
-# Import model
+# Import model at module level
 try:
-    from .can import CAN
+    from models.can.can import CAN
 except ImportError:
-    pass
+    try:
+        from can import CAN
+    except ImportError:
+        pass
 
 def levenshtein_distance(lst1, lst2):
     """
@@ -320,7 +335,25 @@ def main():
         print(f'Evaluation metrics: {metrics}')
 
 if __name__ == '__main__':
-    from can_dataloader import Vocabulary, process_img, inp_h, inp_w
-    torch.serialization.add_safe_globals([Vocabulary])
-    from can import CAN
+    # Ensure imports are available
+    if 'Vocabulary' not in globals():
+        try:
+            # Try absolute imports first
+            from models.can.can_dataloader import Vocabulary, process_img, inp_h, inp_w
+        except ImportError:
+            # Fall back to relative imports
+            from can_dataloader import Vocabulary, process_img, inp_h, inp_w
+    
+    if 'CAN' not in globals():
+        try:
+            # Try absolute imports first
+            from models.can.can import CAN
+        except ImportError:
+            # Fall back to relative imports
+            from can import CAN
+    
+    # Ensure Vocabulary is safe for serialization
+    torch.serialization.add_safe_globals([Vocabulary])           #type: ignore
+    
+    # Run the main function
     main()

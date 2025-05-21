@@ -206,18 +206,26 @@ def main():
     model.apply(init_weights)
     
     # Create optimizer with weight decay
-    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
+    optimizer = optim.AdamW(model.parameters(), lr=float(lr), weight_decay=1e-4)  # Ensure lr is float
     
     # Create learning rate scheduler with warmup
     def get_lr(epoch):
         if epoch < warmup_epochs:
-            # Linear warmup
-            return lr * (epoch + 1) / warmup_epochs
+            # Linear warmup - ensure minimum value is not zero
+            return max(0.1, (epoch + 1) / warmup_epochs)  # Start at 10% of base lr
         else:
             # Cosine annealing with restarts
             epoch = epoch - warmup_epochs
-            return lr * 0.5 * (1 + math.cos(math.pi * (epoch % T_0) / T_0))
+            return 0.5 * (1 + math.cos(math.pi * (epoch % T_0) / T_0))
     
+    # Set initial learning rate manually
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = float(lr)  # Start at base lr
+    
+    # Print initial learning rate
+    print(f"Initial learning rate: {optimizer.param_groups[0]['lr']:.6f}")
+    
+    # Create scheduler after setting initial learning rate
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=get_lr)
     
     # Initialize wandb
@@ -242,8 +250,16 @@ def main():
     best_val_loss = float('inf')
     
     for epoch in tqdm(range(epochs)):
-        curr_lr = scheduler.get_last_lr()[0]
-        print(f'Epoch {epoch+1:03}/{epochs:03}')
+        # Get current learning rate before training
+        curr_lr = optimizer.param_groups[0]['lr']
+        print(f'Epoch {epoch+1:03}/{epochs:03}, Learning Rate: {curr_lr:.6f}')
+        print(f'Debug - Actual LR in optimizer: {optimizer.param_groups[0]["lr"]:.8f}')
+        
+        # Update learning rate for next epoch
+        if epoch > 0:  # Skip first epoch as we manually set the initial LR
+            scheduler.step()
+            print(f'Debug - LR after scheduler step: {optimizer.param_groups[0]["lr"]:.8f}')
+            
         t1 = time.time()
         
         # Train
@@ -265,14 +281,12 @@ def main():
             lambda_count=lambda_count
         )
         
-        # Update learning rate
-        scheduler.step()
         t2 = time.time()
         
         # Print stats
         print(f'Train - Total Loss: {train_loss:.4f}, Class Loss: {train_cls_loss:.4f}, Count Loss: {train_count_loss:.4f}')
         print(f'Val - Total Loss: {val_loss:.4f}, Class Loss: {val_cls_loss:.4f}, Count Loss: {val_count_loss:.4f}')
-        print(f'Time: {t2 - t1:.2f}s, Learning Rate: {curr_lr:.6f}')
+        print(f'Time: {t2 - t1:.2f}s')
         
         # Log metrics to wandb
         wandb.log({

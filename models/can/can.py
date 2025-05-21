@@ -390,12 +390,13 @@ class CAN(nn.Module):
         
         Returns:
             Total loss: L = L_cls + λ * L_counting
+            where L_counting is Smooth L1 Loss (Huber Loss)
         """
         # Loss for decoder (cross entropy)
         L_cls = F.cross_entropy(outputs.view(-1, outputs.size(-1)), targets.view(-1))
         
-        # Loss for counting (MSE)
-        L_counting = F.mse_loss(count_vectors, count_targets)
+        # Loss for counting (Smooth L1 Loss)
+        L_counting = F.smooth_l1_loss(count_vectors, count_targets)
         
         # Total loss
         total_loss = L_cls + lambda_count * L_counting

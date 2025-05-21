@@ -12,6 +12,7 @@ import time
 import wandb
 from datetime import datetime
 from tqdm.auto import tqdm
+import math
 
 # Import model and data loader from previous files
 from models.can.can import CAN
@@ -144,7 +145,8 @@ def main():
     lambda_count = 0.01
     
     # Training parameters
-    lr = 3e-4
+    lr = 1e-4  # Reduced initial learning rate
+    warmup_epochs = 2  # Add warmup epochs
     epochs = 100
     grad_clip = 5.0
     print_freq = 20
@@ -177,6 +179,7 @@ def main():
     print(f"Validation samples: {len(val_loader.dataset)}")       #type: ignore
     print(f"Test samples: {len(test_loader.dataset)}")            #type: ignore
     print(f"Vocabulary size: {len(vocab)}")
+    print(f"Vocabularh: {vocab.word2idx}")
     
     # Create model
     model = CAN(
@@ -186,15 +189,36 @@ def main():
         use_coverage=use_coverage
     ).to(device)
     
-    # Create optimizer
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    # Initialize model weights
+    def init_weights(m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.BatchNorm2d):
+            nn.init.constant_(m.weight, 1)
+            nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.Linear):
+            nn.init.xavier_normal_(m.weight)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
     
-    # Create learning rate scheduler
-    scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
-        optimizer,
-        T_0=T_0,
-        T_mult=T_mult
-    )
+    model.apply(init_weights)
+    
+    # Create optimizer with weight decay
+    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
+    
+    # Create learning rate scheduler with warmup
+    def get_lr(epoch):
+        if epoch < warmup_epochs:
+            # Linear warmup
+            return lr * (epoch + 1) / warmup_epochs
+        else:
+            # Cosine annealing with restarts
+            epoch = epoch - warmup_epochs
+            return lr * 0.5 * (1 + math.cos(math.pi * (epoch % T_0) / T_0))
+    
+    scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=get_lr)
     
     # Initialize wandb
     run_name = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -206,10 +230,12 @@ def main():
         'use_coverage': use_coverage,
         'lambda_count': lambda_count,
         'lr': lr,
+        'warmup_epochs': warmup_epochs,
         'epochs': epochs,
         'grad_clip': grad_clip,
         'T_0': T_0,
-        'T_mult': T_mult
+        'T_mult': T_mult,
+        'weight_decay': 1e-4
     })
     
     # Training loop

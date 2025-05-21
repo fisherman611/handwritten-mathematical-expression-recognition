@@ -214,7 +214,7 @@ class HMERDatasetForCAN(Dataset):
             tokens: List of token IDs
 
         Returns:
-            Tensor counting the occurrence of each symbol
+            Tensor counting the occurrence of each symbol, with special tokens set to zero
         """
         # Count occurrences of each token
         counter = Counter(tokens)
@@ -222,10 +222,18 @@ class HMERDatasetForCAN(Dataset):
         # Create counting vector with size equal to vocabulary size
         count_vector = torch.zeros(len(self.vocab))
 
-        # Fill counting vector with counts
+        # List of special tokens to ignore in counting
+        ignored_tokens = ['<start>', '<end>', '^', '_', '{', '}']
+        ignored_indices = [self.vocab.word2idx[token] for token in ignored_tokens if token in self.vocab.word2idx]
+
+        # Fill counting vector with counts, setting ignored tokens to zero
         for token_id, count in counter.items():
             if 0 <= token_id < len(count_vector):
-                count_vector[token_id] = count
+                # Set count to zero for ignored tokens
+                if token_id in ignored_indices:
+                    count_vector[token_id] = 0
+                else:
+                    count_vector[token_id] = count
 
         return count_vector
 

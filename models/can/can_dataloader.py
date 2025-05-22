@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 # Configuration
 @dataclass
-class Config:
+class DataConfig:
     INPUT_HEIGHT: int = 128
     INPUT_WIDTH: int = 128 * 8
     MAX_LENGTH: int = 150
@@ -20,7 +20,7 @@ class Config:
     NUM_WORKERS: int = 4
     BASE_DIR: str = 'data/CROHME'
 
-CONFIG = Config()
+CONFIG = DataConfig()
 
 def is_effectively_binary(img: np.ndarray, threshold: float = 0.9) -> bool:
     """Check if image is effectively binary based on pixel intensity."""

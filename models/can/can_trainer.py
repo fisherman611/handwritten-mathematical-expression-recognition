@@ -18,30 +18,38 @@ import albumentations as A
 import cv2
 import random
 
+import json 
+
+with open("config.json", "r") as json_file:
+    cfg = json.load(json_file)
+
+CAN_CONFIG = cfg["can"]
+
+
 # Global constants
-BASE_DIR = "data/CROHME"
-SEED = 1337
-CHECKPOINT_DIR = 'checkpoints'
-PRETRAINED_BACKBONE = True 
-BACKBONE_TYPE = 'densenet'
+BASE_DIR = CAN_CONFIG["base_dir"]
+SEED = CAN_CONFIG["seed"]
+CHECKPOINT_DIR = CAN_CONFIG["checkpoint_dir"]
+PRETRAINED_BACKBONE = True if CAN_CONFIG["pretrained_backbone"] == 1 else False
+BACKBONE_TYPE = CAN_CONFIG["backbone_type"]
 CHECKPOINT_NAME = f'{BACKBONE_TYPE}_can_best.pth' if PRETRAINED_BACKBONE == False else f'p_{BACKBONE_TYPE}_can_best.pth'
-BATCH_SIZE = 32
+BATCH_SIZE = CAN_CONFIG["batch_size"]
 
-HIDDEN_SIZE = 256
-EMBEDDING_DIM = 256
-USE_COVERAGE = True
-LAMBDA_COUNT = 0.01
+HIDDEN_SIZE = CAN_CONFIG["hidden_size"]
+EMBEDDING_DIM = CAN_CONFIG["embedding_dim"]
+USE_COVERAGE = True if CAN_CONFIG["use_coverage"] == 1 else False
+LAMBDA_COUNT = CAN_CONFIG["lambda_count"]
 
-LR = 3e-4
-EPOCHS = 100
-GRAD_CLIP = 5.0
-PRINT_FREQ = 20
+LR = CAN_CONFIG["lr"]
+EPOCHS = CAN_CONFIG["epochs"]
+GRAD_CLIP = CAN_CONFIG["grad_clip"]
+PRINT_FREQ = CAN_CONFIG["print_freq"]
 
-T = 5
-T_MULT = 2
+T = CAN_CONFIG["t"]
+T_MULT = CAN_CONFIG["t_mult"]
 
 PROJECT_NAME = f'final-hmer-can-{BACKBONE_TYPE}-pretrained' if PRETRAINED_BACKBONE == True else f'final-hmer-can-{BACKBONE_TYPE}'
-NUM_WORKERS = 4
+NUM_WORKERS = cfg["can"]["num_workers"]
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class RandomMorphology(A.ImageOnlyTransform):

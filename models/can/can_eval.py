@@ -20,16 +20,22 @@ torch.serialization.add_safe_globals([Vocabulary])
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 
+with open("config.json", "r") as json_file:
+    cfg = json.load(json_file)
+
+CAN_CONFIG = cfg["can"]
+
+
 # Global constants here
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-MODE = 'evaluate'  # 'single' or 'evaluate'
-BACKBONE_TYPE = 'densenet'
-PRETRAINED_BACKBONE = True
+MODE = CAN_CONFIG["mode"]  # 'single' or 'evaluate'
+BACKBONE_TYPE = CAN_CONFIG["backbone_type"]
+PRETRAINED_BACKBONE = True if CAN_CONFIG["pretrained_backbone"] == 1 else False
 CHECKPOINT_PATH = f'checkpoints/{BACKBONE_TYPE}_can_best.pth' if PRETRAINED_BACKBONE == False else f'checkpoints/p_{BACKBONE_TYPE}_can_best.pth'
-IMAGE_PATH = 'data/CROHME/test/img/18_em_19.bmp'
-VISUALIZE = True
-TEST_FOLDER = 'data/CROHME/test/img'
-LABEL_FILE = 'data/CROHME/test/caption.txt'
+IMAGE_PATH = f"{CAN_CONFIG["test_folder"]}/{CAN_CONFIG["relative_image_path"]}"
+VISUALIZE = True if CAN_CONFIG["visualize"] == 1 else False
+TEST_FOLDER = CAN_CONFIG["test_folder"]
+LABEL_FILE = CAN_CONFIG["label_file"]
 
 
 def levenshtein_distance(lst1, lst2):

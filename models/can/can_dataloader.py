@@ -8,13 +8,20 @@ import cv2
 import numpy as np
 from collections import Counter
 
+import json 
+
+with open("config.json", "r") as json_file:
+    cfg = json.load(json_file)
+
+CAN_CONFIG = cfg["can"]
+
 
 # Global constants
-INPUT_HEIGHT = 128
-INPUT_WIDTH = 128 * 8
-BASE_DIR = "data/CROHME"
-BATCH_SIZE = 32
-NUM_WORKERS = 4
+INPUT_HEIGHT = CAN_CONFIG["input_height"]
+INPUT_WIDTH = CAN_CONFIG["input_width"]
+BASE_DIR = CAN_CONFIG["base_dir"]
+BATCH_SIZE = CAN_CONFIG["batch_size"]
+NUM_WORKERS = CAN_CONFIG["num_workers"]
 
 
 def is_effectively_binary(img, threshold_percentage=0.9):

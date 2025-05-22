@@ -40,7 +40,7 @@ PRINT_FREQ = 20
 T = 5
 T_MULT = 2
 
-PROJECT_NAME = 'final-hmer-can-densenet-pretrained'
+PROJECT_NAME = f'final-hmer-can-{BACKBONE_TYPE}-pretrained' if PRETRAINED_BACKBONE == True else f'final-hmer-can-{BACKBONE_TYPE}'
 NUM_WORKERS = 4
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

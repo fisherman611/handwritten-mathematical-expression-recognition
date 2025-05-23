@@ -346,14 +346,16 @@ class MSCM(nn.Module):
         # Branch 1: 3x3 kernel
         self.branch1 = nn.Sequential(
             nn.Conv2d(in_channels, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
+            nn.Dropout2d(p=0.2)
         )
         self.attention1 = ChannelAttention(256)
         
         # Branch 2: 5x5 kernel
         self.branch2 = nn.Sequential(
             nn.Conv2d(in_channels, 256, kernel_size=5, padding=2),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
+            nn.Dropout2d(p=0.2)
         )
         self.attention2 = ChannelAttention(256)
         
@@ -457,7 +459,8 @@ class CCAD(nn.Module):
         
         # Output layer
         self.out = nn.Linear(hidden_size + hidden_size + num_classes, num_classes)
-    
+        self.dropout = nn.Dropout(p=0.3)
+        
     def forward(self, feature_map, count_vector, target=None, teacher_forcing_ratio=0.5, max_len=200):
         batch_size = feature_map.size(0)
         device = feature_map.device
@@ -624,7 +627,7 @@ class CAN(nn.Module):
         L_cls = F.cross_entropy(outputs.view(-1, outputs.size(-1)), targets.view(-1))
         
         # Loss for counting (MSE)
-        L_counting = F.smooth_l1_loss(count_vectors, count_targets)
+        L_counting = F.smooth_l1_loss(count_vectors / self.num_classes, count_targets / self.num_classes)
         
         # Total loss
         total_loss = L_cls + lambda_count * L_counting

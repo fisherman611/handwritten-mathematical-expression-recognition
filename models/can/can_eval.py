@@ -184,18 +184,27 @@ def visualize_attention_maps(image,
                              figsize=(num_cols * 3, num_rows * 3))
     axes = np.array(axes).reshape(-1)
 
+    # Infer feature map shape from attention vector length
+    attn_len = attention_weights[0].numel() if len(attention_weights) > 0 else 0
+    if attn_len == 0:
+        print("No attention weights to visualize.")
+        return
+    # Try to find a square or nearly-square shape
+    h = int(np.floor(np.sqrt(attn_len)))
+    while attn_len % h != 0 and h > 1:
+        h -= 1
+    w = attn_len // h
+
     for i, (token, attn) in enumerate(zip(latex_tokens, attention_weights)):
         ax = axes[i]
-
-        # Reshape attention and resize to match image dimensions
-        attn = attn.squeeze().cpu().numpy()
-        attn = cv2.resize(attn, (image.shape[1], image.shape[0]))
-
+        attn_np = attn.detach().cpu().numpy().reshape(h, w)
+        # Normalize attention map for visualization
+        attn_np = (attn_np - attn_np.min()) / (attn_np.max() - attn_np.min() + 1e-8)
+        attn_resized = cv2.resize(attn_np, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_CUBIC)
         # Plot original image
         ax.imshow(image.squeeze(), cmap='gray')
-
         # Overlay attention map
-        ax.imshow(attn, cmap='jet', alpha=0.4)
+        ax.imshow(attn_resized, cmap='jet', alpha=0.4)
         ax.set_title(f'{token}', fontsize=12)
         ax.axis('off')
 

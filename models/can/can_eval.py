@@ -194,10 +194,11 @@ def visualize_attention_maps(image,
     while attn_len % h != 0 and h > 1:
         h -= 1
     w = attn_len // h
+    h //=5
 
     for i, (token, attn) in enumerate(zip(latex_tokens, attention_weights)):
         ax = axes[i]
-        attn_np = attn.detach().cpu().numpy().reshape(h, w)
+        attn_np = attn[0:1].detach().cpu().numpy().reshape(h, w)
         # Normalize attention map for visualization
         attn_np = (attn_np - attn_np.min()) / (attn_np.max() - attn_np.min() + 1e-8)
         attn_resized = cv2.resize(attn_np, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_CUBIC)

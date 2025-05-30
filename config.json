@@ -2,7 +2,7 @@
     "can":{
         "input_height": 128,
         "input_width": 1024,
-        "base_dir": "data/CROHME",
+        "base_dir": "data/CROHME_splitted",
         "batch_size": 32,
         "num_workers": 4,
         "seed": 1337,
@@ -20,8 +20,8 @@
         "t": 5,
         "t_mult": 2,
         "visualize": 1,
-        "test_folder": "data/CROHME/test/img",
-        "label_file": "data/CROHME/test/caption.txt",
+        "test_folder": "data/CROHME_splitted/test/img",
+        "label_file": "data/CROHME_splitted/test/caption.txt",
         "relative_image_path": "18_em_19.bmp",
         "mode": "evaluate"
     }

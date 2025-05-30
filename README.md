@@ -46,14 +46,14 @@ CAN is an end-to-end model for HMER, combining recognition and symbol counting:
 
     * $1 \times 1$ conv on $\mathcal{F}$ to $\mathcal{T} \in \mathbb{R}^{H \times W \times 512}$, adds positional encoding.
     * GRU gives hidden state $h_t \in \mathbb{R}^{1 \times 256}$, attention weights: $$e_{t,ij} = w^T \tanh(\mathcal{T} + \mathcal{P} + W_a \mathcal{A} + W_h h_t) + b$$ $$\alpha_{t,ij} = \frac{\exp(e_{t,ij})}{\sum_{p=1}^H \sum_{q=1}^W \exp(e_{t,pq})}$$
-    * Context vector $\mathcal{C} \in \mathbb{R}^{1 \times 256}$, predicts token: $$p(y_t) = \operatorname{softmax}(w_o^T (W_c \mathcal{C} + W_v \mathcal{V}^f + W_t h_t + W_e E(y_{t-1})) + b_o)$$
+    * Context vector $\mathcal{C} \in \mathbb{R}^{1 \times 256}$, predicts token: $$p(y_t) = \text{softmax}(w_o^T (W_c \mathcal{C} + W_v \mathcal{V}^f + W_t h_t + W_e E(y_{t-1})) + b_o)$$
     * Beam search (width = 5) for inference.
 
 * **Loss:** 
     
     * Loss class: $$\mathcal{L}{\text{cls}} = -\frac{1}{T} \sum{t=1}^T \log(p(y_t))$$
-    * Loss counting: $$\mathcal{L}{\text{counting}} = \operatorname{smooth}{L_1}(\mathcal{V}^f, \hat{\mathcal{V}})$$
-    * Total loss:  $$\mathcal{L} = \mathcal{L}{\text{cls}} + \lambda \mathcal{L}{\text{counting}}$$ $$\lambda = 0.01$$
+    * Loss counting: $$\mathcal{L}{\text{counting}} = \text{smooth}{L_1}(\mathcal{V}^f, \hat{\mathcal{V}})$$
+    * Total loss:  $$\mathcal{L} = \mathcal{L}{\text{cls}} + \lambda \mathcal{L}{\text{counting}}$$, $$\lambda = 0.01$$
 
 ## **Results**
 ## **Conclusion**

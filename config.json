@@ -15,7 +15,7 @@
         "lambda_count": 0.01,
         "lr": 3e-4,
         "epochs": 100,
-        "grad_clip": 10.0,
+        "grad_clip": 5.0,
         "print_freq": 20,
         "t": 5,
         "t_mult": 2,

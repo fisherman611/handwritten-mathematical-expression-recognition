@@ -1,6 +1,8 @@
 import os
 import sys
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 import torch
 import pandas as pd
 from PIL import Image
@@ -13,8 +15,8 @@ from tqdm.auto import tqdm
 import json
 import torch.nn.functional as F
 
-from can import CAN, create_can_model
-from can_dataloader import Vocabulary, process_img, INPUT_HEIGHT, INPUT_WIDTH
+from models.can.can import CAN, create_can_model
+from models.can.can_dataloader import Vocabulary, process_img, INPUT_HEIGHT, INPUT_WIDTH
 
 torch.serialization.add_safe_globals([Vocabulary])
 
@@ -32,7 +34,7 @@ MODE = CAN_CONFIG["mode"]  # 'single' or 'evaluate'
 BACKBONE_TYPE = CAN_CONFIG["backbone_type"]
 PRETRAINED_BACKBONE = True if CAN_CONFIG["pretrained_backbone"] == 1 else False
 CHECKPOINT_PATH = f'checkpoints/{BACKBONE_TYPE}_can_best.pth' if PRETRAINED_BACKBONE == False else f'checkpoints/p_{BACKBONE_TYPE}_can_best.pth'
-IMAGE_PATH = f"{CAN_CONFIG["test_folder"]}/{CAN_CONFIG["relative_image_path"]}"
+IMAGE_PATH = f'{CAN_CONFIG["test_folder"]}/{CAN_CONFIG["relative_image_path"]}'
 VISUALIZE = True if CAN_CONFIG["visualize"] == 1 else False
 TEST_FOLDER = CAN_CONFIG["test_folder"]
 LABEL_FILE = CAN_CONFIG["label_file"]

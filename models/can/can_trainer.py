@@ -1,6 +1,8 @@
 import os
 import sys
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -11,8 +13,8 @@ import wandb
 from datetime import datetime
 from tqdm.auto import tqdm
 
-from can import CAN, create_can_model
-from can_dataloader import create_dataloaders_for_can, Vocabulary
+from models.can.can import CAN, create_can_model
+from models.can.can_dataloader import create_dataloaders_for_can, Vocabulary
 
 import albumentations as A
 import cv2

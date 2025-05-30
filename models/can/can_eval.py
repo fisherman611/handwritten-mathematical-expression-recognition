@@ -36,6 +36,19 @@ IMAGE_PATH = f"{CAN_CONFIG["test_folder"]}/{CAN_CONFIG["relative_image_path"]}"
 VISUALIZE = True if CAN_CONFIG["visualize"] == 1 else False
 TEST_FOLDER = CAN_CONFIG["test_folder"]
 LABEL_FILE = CAN_CONFIG["label_file"]
+CLASSIFIER = CAN_CONFIG["classifier"]  # choose between 'frac', 'sum_or_lim', 'long_expr', and 'all'
+
+
+def filter_formula(formula_tokens, mode):
+    if mode == "frac":
+        return "\\frac" in formula_tokens
+    elif mode == "sum_or_lim":
+        return "\\sum" in formula_tokens or "\\limit" in formula_tokens
+    elif mode == "long_expr":
+        return len(formula_tokens) >= 30
+    elif mode == 'short_expr':
+        return len(formula_tokens) <= 10
+    return True
 
 
 def levenshtein_distance(lst1, lst2):
@@ -266,7 +279,9 @@ def evaluate_model(model,
     results = {}
 
     for image_path, gt_latex in tqdm(annotations.items(), desc="Evaluating"):
-        gt_latex = gt_latex
+        gt_latex: str = gt_latex
+        if not filter_formula(gt_latex.split(), CLASSIFIER):
+            continue 
         file_path = os.path.join(test_folder, image_path)
 
         try:
@@ -394,6 +409,7 @@ def main(mode):
 
         metrics, results = evaluate_model(model, test_folder, label_file,
                                           vocab, device)
+        print(f"##### Score of {CLASSIFIER} expression type: #####")
         print(f'Evaluation metrics: {metrics}')
 
 

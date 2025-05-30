@@ -23,6 +23,7 @@
         "test_folder": "data/CROHME_splitted/test/img",
         "label_file": "data/CROHME_splitted/test/caption.txt",
         "relative_image_path": "18_em_18.bmp",
-        "mode": "evaluate"
+        "mode": "evaluate",
+        "classifier": "frac"
     }
 }

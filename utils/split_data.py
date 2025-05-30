@@ -52,9 +52,9 @@ with open('data/CROHME_splitted/val/caption.txt', 'w', encoding='utf-8') as f:
 
 
 IMAGES_DIR = 'data/images'
-TRAIN_DIR = 'data/CROHME_splitted/train/images'
-TEST_DIR = 'data/CROHME_splitted/test/images'
-VAL_DIR = 'data/CROHME_splitted/val/images'
+TRAIN_DIR = 'data/CROHME_splitted/train/img'
+TEST_DIR = 'data/CROHME_splitted/test/img'
+VAL_DIR = 'data/CROHME_splitted/val/img'
 
 os.makedirs(TRAIN_DIR, exist_ok=True)
 os.makedirs(TEST_DIR, exist_ok=True)        

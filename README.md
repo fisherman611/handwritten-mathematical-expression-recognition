@@ -81,6 +81,10 @@ Download the pretrained model checkpoints from this [OneDrive link](https://hust
 Place the downloaded checkpoint in the `checkpoints/` directory within the repository.
 
 ## **Inference**
+Run `app.py` to make the inference
+```bash
+python app.py
+```
 ## **References**
 [1] B. Li, Y. Yuan, D. Liang, X. Liu, Z. Ji, J. Bai, W. Liu, and X. Bai, "When Counting Meets HMER: Counting-Aware Network for Handwritten Mathematical Expression Recognition," arXiv preprint arXiv:2207.11463, 2022. [Online]. Available: https://arxiv.org/abs/2207.11463
 ## **License**

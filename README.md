@@ -56,6 +56,13 @@ CAN is an end-to-end model for HMER, combining recognition and symbol counting:
     * Total loss:  $$\mathcal{L} = \mathcal{L}{\text{cls}} + \lambda \mathcal{L}{\text{counting}}$$, $$\lambda = 0.01$$
 
 ## **Results**
+| Model       | ExpRate   | ExpRate-Leq1 | ExpRate-Leq2 | ExpRate-Leq3 | 
+|-------------|--------|---------|---------|---------|
+| Customized DenseNet-CAN        | 0.4248 | 0.6385  | 0.7313  | 0.8036  | 
+| Customized ResNet-CAN  | 0.4511 | 0.6459  | 0.7288  | 0.7888  |
+| Pretrained ResNet-CAN        | 0.424 | 0.622  | 0.7214  | 0.7888  | 
+| Pretrained DenseNet-CAN    | **0.5316** | **0,7149**  | **0.8069**  | **0.8521**  |
+
 ## **Conclusion**
 CAN works well for handwritten math recognition on CROHME dataset. It handles complex expressions with counting and attention. Future ideas: try transformer decoders, add synthetic data, improve preprocessing for noisy images.
 

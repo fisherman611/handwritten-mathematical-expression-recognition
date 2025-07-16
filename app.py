@@ -754,69 +754,6 @@ with gr.Blocks(css=custom_css, title="Math Expression Recognition") as demo:
                         value="*Your beautifully rendered mathematical expression will appear here...*\n\n*Draw or upload an expression to see the magic happen!*"
                     )
     
-    # Enhanced examples section with larger preview
-    gr.HTML("""
-    <div style="margin-top: 2rem; padding: clamp(1rem, 3vw, 2rem); background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-        <h3 style="text-align: center; color: #667eea; margin-bottom: 1.5rem; font-size: clamp(1.1rem, 3vw, 1.3rem);">💡 Try these mathematical expressions:</h3>
-        <div class="examples-grid">
-            <div class="example-card">
-                <strong>Simple Equations:</strong>
-                <span>x + y = z<br>a - b = c</span>
-            </div>
-            <div class="example-card">
-                <strong>Fractions:</strong>
-                <span>1/2 + 3/4 = 5/4<br>a/b × c/d</span>
-            </div>
-            <div class="example-card">
-                <strong>Powers & Roots:</strong>
-                <span>x² + y² = z²<br>√(a + b)</span>
-            </div>
-            <div class="example-card">
-                <strong>Calculus:</strong>
-                <span>∫ x dx = x²/2<br>d/dx (sin x)</span>
-            </div>
-            <div class="example-card">
-                <strong>Matrices:</strong>
-                <span>[a b]<br>[c d]</span>
-            </div>
-            <div class="example-card">
-                <strong>Greek Letters:</strong>
-                <span>α + β = γ<br>θ = π/2</span>
-            </div>
-        </div>
-        <div style="margin-top: 1.5rem; padding: clamp(0.8rem, 2vw, 1rem); background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 10px; text-align: center;">
-            <p style="color: #1565c0; margin: 0; font-size: clamp(0.9rem, 2vw, 1rem); font-weight: 500;">
-                🎯 <strong>Pro Tip:</strong> The larger drawing area gives you more space for complex expressions. Take your time and write clearly for best results!
-            </p>
-        </div>
-    </div>
-    """)
-    
-    # Performance metrics section
-    gr.HTML("""
-    <div style="margin-top: 1.5rem; padding: clamp(1rem, 3vw, 1.5rem); background: linear-gradient(135deg, #fff3e0 0%, #ffcc02 20%, #fff3e0 100%); border-radius: 12px; border-left: 4px solid #ff9800;">
-        <h4 style="color: #e65100; margin-bottom: 1rem; font-size: clamp(1rem, 2.5vw, 1.1rem);">⚡ Enhanced Features:</h4>
-        <div class="metrics-grid">
-            <div class="metric-item">
-                <strong>🖼️ Large Canvas</strong>
-                <span>800×500px drawing area</span>
-            </div>
-            <div class="metric-item">
-                <strong>🎯 High Accuracy</strong>
-                <span>Advanced CAN model</span>
-            </div>
-            <div class="metric-item">
-                <strong>📱 Responsive</strong>
-                <span>Works on all devices</span>
-            </div>
-            <div class="metric-item">
-                <strong>⚡ Fast Processing</strong>
-                <span>Real-time recognition</span>
-            </div>
-        </div>
-    </div>
-    """)
-    
     # Connect the buttons to their respective functions
     draw_button.click(
         fn=process_draw,

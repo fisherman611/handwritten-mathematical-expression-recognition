@@ -702,6 +702,14 @@ with gr.Blocks(css=custom_css, title="Math Expression Recognition") as demo:
                     </div>
                     """)
                     
+                    # Add brush size instruction
+                    gr.HTML("""
+                    <div class="brush-instruction" style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; color: #1565c0;">
+                        <strong>🖌️ Brush Size:</strong> Look for brush size controls in the drawing interface, or try different drawing pressures. 
+                        For best results with math expressions, use a medium brush thickness.
+                    </div>
+                    """)
+                    
                     draw_input = gr.Sketchpad(
                         label="Draw your mathematical expression here",
                         elem_classes="sketchpad-container",
@@ -768,4 +776,10 @@ with gr.Blocks(css=custom_css, title="Math Expression Recognition") as demo:
     )
 
 if __name__ == "__main__":
-    demo.launch(share=True, inbrowser=True)
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=7860,
+        share=False,
+        show_error=True,
+        inbrowser=True
+    )
